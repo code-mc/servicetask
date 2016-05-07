@@ -26,7 +26,7 @@ dependencies {
 
 ### API
 
-API consists of 2 classes:
+API consists of 3 classes:
 
 #### `ServiceTask<Type1, Type2>`
 
