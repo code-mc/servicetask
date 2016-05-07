@@ -14,11 +14,21 @@ Your asynchronous work will be executed inside an IntentService which runs each 
  * ~10KB in size + ~180KB for the GSON dependency
  * Serializes data passed between threads
 
-## API
+## Usage
+
+### Gradle
+
+```groovy
+dependencies {
+    compile 'net.steamcrafted:servicetask:1.0.0'
+}
+```
+
+### API
 
 API consists of 2 classes:
 
-### `ServiceTask<Type1, Type2>`
+#### `ServiceTask<Type1, Type2>`
 
 Abstract template class. Extend this to implement your own async ServiceTask. You have to specify two types: the former for input data (what you give to the task) and one for the output data (what the task produces as a result). You can use any generic Java type for this. If you want to use your own class read the `ServiceTaskPojo` section.
 
@@ -28,15 +38,15 @@ Abstract template class. Extend this to implement your own async ServiceTask. Yo
 
 `void register(Context c, String task_id, ServiceTaskCallback<Type2> callback)` Call this method to register a callback to a running task. You have to specify the task ID to register a callback. So always hold on to your task ID (see example).
 
-### `ServiceTaskPojo`
+#### `ServiceTaskPojo`
 
 Class you extend when you want to pass in your own Pojo objects to a ServiceTask's onAsync method. This class has the required proguard rules to work nicely with GSON (which serializes/deserializes your data between threads)
 
-### `ServiceTaskCallback<Type2>`
+#### `ServiceTaskCallback<Type2>`
 
 Interface that you override to register as a callback to your `ServiceTask`.
 
-## Example
+### Example
 
 The best way to explain the library is by showing you an example. Let's say we want to download an image file. The first thing you do is create a class specific to your task that extends the `ServiceTask` class. We'll call it `ImageDownloader`. The `ServiceTask` class is a templated class requiring 2 types: the type of your input data (which will be passed on to the background thread) and the type of the result produced by the thread.
 
