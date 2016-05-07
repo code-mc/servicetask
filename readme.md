@@ -32,11 +32,22 @@ API consists of 3 classes:
 
 Abstract template class. Extend this to implement your own async ServiceTask. You have to specify two types: the former for input data (what you give to the task) and one for the output data (what the task produces as a result). You can use any generic Java type for this. If you want to use your own class read the `ServiceTaskPojo` section.
 
-`Type2 onAsync(Type1 data)` Everything that is executed inside this method will be running inside a separate thread. Has a single argument of the first specified type in your class. This will represent your input data. The return type is of the second specified type in your class.
+```java
+// Everything that is executed inside this method will be running inside a separate thread.
+// Has a single argument of the first specified type in your class. This will represent your
+// input data. The return type is of the second specified type in your class.
+Type2 onAsync(Type1 data)
 
-`String execute(Context c, Type1 data)` Call this to start the task. Returns a `String` that contains a unique ID which you can use to interact with your running task.
 
-`void register(Context c, String task_id, ServiceTaskCallback<Type2> callback)` Call this method to register a callback to a running task. You have to specify the task ID to register a callback. So always hold on to your task ID (see example).
+// Call this to start the task. Returns a String that contains a unique ID which 
+// you can use to interact with your running task.
+String execute(Context c, Type1 data)
+
+
+// Call this method to register a callback to a running task. You have to specify the 
+// task ID to register a callback. So always hold on to your task ID (see example).
+void register(Context c, String task_id, ServiceTaskCallback<Type2> callback)
+```
 
 #### `ServiceTaskPojo`
 
