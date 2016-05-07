@@ -19,14 +19,8 @@ Your asynchronous work will be executed inside an IntentService which runs each 
 ### Gradle
 
 ```groovy
-repositories {
-    maven { 
-        url "http://dl.bintray.com/codecrafted/maven" 
-    } 
-}
-
 dependencies {
-    compile 'net.steamcrafted:servicetask:1.0.0'
+    compile 'net.steamcrafted:servicetask:1.0.1'
 }
 ```
 

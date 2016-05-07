@@ -43,19 +43,21 @@ public class MainActivity extends AppCompatActivity {
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(getRequestId != null)
+                if (getRequestId != null)
                     new GetRequest().register(MainActivity.this, getRequestId, new ServiceTask.ServiceTaskCallback<GetRequest.Response>() {
                         @Override
                         public void afterAsync(GetRequest.Response result) {
-                            if(result.success){
+                            if (result.success) {
                                 setText("Success: " + result.data);
-                            }else{
+                            } else {
                                 setText("Something went wrong!");
                             }
                         }
                     });
             }
         });
+
+        if(savedInstanceState != null) onRestoreInstanceState(savedInstanceState);
     }
 
     public void setText(String text){
@@ -72,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         getRequestId = savedInstanceState.getString("getRequestId");
-        registerButton.setEnabled(getRequestId != null);
         System.out.println("ONRESTORE: " + getRequestId);
 /*        if(getRequestId != null){
             new GetRequest().register(this, getRequestId, new ServiceTask.ServiceTaskCallback<Pair<String, Boolean>>() {
@@ -82,6 +83,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }*/
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        registerButton.setEnabled(getRequestId != null);
     }
 
     @Override
