@@ -30,7 +30,7 @@ API consists of 3 classes:
 
 #### `ServiceTask<Type1, Type2>`
 
-Abstract template class. Extend this to implement your own async ServiceTask. You have to specify two types: the former for input data (what you give to the task) and one for the output data (what the task produces as a result). You can use any generic Java type for this. If you want to use your own class read the `ServiceTaskPojo` section.
+Abstract template class. Extend this to implement your own async `ServiceTask`. You have to specify two types: the former for input data (what you give to the task) and one for the output data (what the task produces as a result). You can use any generic Java type for this. If you want to use your own class read the `ServiceTaskPojo` section.
 
 ```java
 // Everything that is executed inside this method will be running inside a separate thread.
@@ -48,6 +48,8 @@ String execute(Context c, Type1 data)
 // task ID to register a callback. So always hold on to your task ID (see example).
 void register(Context c, String task_id, ServiceTaskCallback<Type2> callback)
 ```
+
+If you end up nesting your `ServiceTask` implementation inside e.g. your `Activity` class you HAVE to make it `static public` otherwise it won't play nice with the used reflection.
 
 #### `ServiceTaskPojo`
 
