@@ -26,9 +26,13 @@ public class ServiceTaskService extends IntentService {
     private static final String ARG_RESULT_JSON     = "ARG_RESULT_JSON";
     private static final String ARG_RESULT_TYPE     = "ARG_RESULT_TYPE";
     private static final String ARG_FUNCTION        = "ARG_FUNCTION";
+    private static final String ARG_RESULT_FUNCTION = "ARG_RESULT_FUNCTION";
 
     private static final int FUNCTION_EXEC  = 0;
     private static final int FUNCTION_QUERY = 1;
+
+    private static final int FUNCTION_RESULT_DATA = 2;
+    private static final int FUNCTION_RESULT_UNREGISTER = 3;
 
     private static int mId = 0;
     private static Map<String, BroadcastReceiver> mRegisteredReceivers = new HashMap<>();
@@ -79,16 +83,22 @@ public class ServiceTaskService extends IntentService {
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                //unregisterReceiver(context, intent.getExtras().getString(ARG_SERVICE_TAG));
-                try {
-                    boolean ok = callback.afterAsync(
-                            new Gson().fromJson(
-                                    intent.getExtras().getString(ARG_RESULT_JSON), Class.forName(intent.getExtras().getString(ARG_RESULT_TYPE))
-                            )
-                    );
-                    if(ok) this.setResultCode(Activity.RESULT_OK);
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                int function = intent.getExtras().getInt(ARG_RESULT_FUNCTION);
+                if(function == FUNCTION_RESULT_DATA){
+                    System.out.println("got data result inside receiver");
+                    try {
+                        boolean ok = callback.afterAsync(
+                                new Gson().fromJson(
+                                        intent.getExtras().getString(ARG_RESULT_JSON), Class.forName(intent.getExtras().getString(ARG_RESULT_TYPE))
+                                )
+                        );
+                        if(ok) this.setResultCode(Activity.RESULT_OK);
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }else if(function == FUNCTION_RESULT_UNREGISTER){
+                    System.out.println("unregistering receiver");
+                    unregisterReceiver(context, intent.getExtras().getString(ARG_SERVICE_TAG));
                 }
             }
         };
@@ -110,7 +120,7 @@ public class ServiceTaskService extends IntentService {
             try {
                 Class<?> callback_type      = Class.forName(intent.getExtras().getString(ARG_CALLBACK_TYPE));
                 Class<?> data_type          = Class.forName(intent.getExtras().getString(ARG_DATA_TYPE));
-                final String service_tag    = intent.getExtras().getString(ARG_SERVICE_TAG);
+                String service_tag    = intent.getExtras().getString(ARG_SERVICE_TAG);
 
                 Object data = new Gson().fromJson(intent.getExtras().getString(ARG_DATA_JSON), data_type);
 
@@ -118,28 +128,9 @@ public class ServiceTaskService extends IntentService {
                 Method onAsync = callback_type.getDeclaredMethod("onAsync", data_type);
 
                 Object result = onAsync.invoke(callback, data);
-                final String result_serialized = new Gson().toJson(result, result.getClass());
-                final String result_type = result.getClass().getName();
-                Intent response_message = new Intent();
-                response_message.setAction(service_tag);
-                response_message.putExtra(ARG_RESULT_JSON, result_serialized);
-                response_message.putExtra(ARG_RESULT_TYPE, result_type);
-                response_message.putExtra(ARG_SERVICE_TAG, service_tag);
-
-                sendOrderedBroadcast(response_message, null, new BroadcastReceiver() {
-
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        int result = getResultCode();
-
-                        // Someone handled the broadcast, we can drop the result as it was successfully received
-                        if (result != Activity.RESULT_CANCELED) {
-                            return;
-                        }
-                        // Queue the result for layer re-emission
-                        queue(result_serialized, result_type, service_tag);
-                    }
-                }, null, Activity.RESULT_CANCELED, null, null);
+                String result_serialized = new Gson().toJson(result, result.getClass());
+                String result_type = result.getClass().getName();
+                sendDataBroadcast(result_serialized, result_type, service_tag);
             } catch (IllegalAccessException e){
                 e.printStackTrace();
                 System.err.println("Tried to invoke a ServiceTask using a class that can not be publicly accessed.\n" +
@@ -153,32 +144,49 @@ public class ServiceTaskService extends IntentService {
             }
         } else if(function == FUNCTION_QUERY)
         {
-            final String service_tag = intent.getExtras().getString(ARG_SERVICE_TAG);
+            String service_tag = intent.getExtras().getString(ARG_SERVICE_TAG);
             if(inqueue(service_tag))
             {
-                final CachedResponse response = dequeue(service_tag);
-                Intent response_message = new Intent();
-                response_message.setAction(service_tag);
-                response_message.putExtra(ARG_RESULT_JSON, response.data);
-                response_message.putExtra(ARG_RESULT_TYPE, response.data_type);
-                response_message.putExtra(ARG_SERVICE_TAG, response.service_tag);
-
-                sendOrderedBroadcast(response_message, null, new BroadcastReceiver() {
-
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        int result_code = getResultCode();
-
-                        // Result was handled by someone, don't save the response
-                        if (result_code != Activity.RESULT_CANCELED) {
-                            return;
-                        }
-                        // Queue the result for layer re-emission
-                        queue(response.data, response.data_type, response.service_tag);
-                    }
-                }, null, Activity.RESULT_CANCELED, null, null);
+                CachedResponse response = dequeue(service_tag);
+                sendDataBroadcast(response.data, response.data_type, response.service_tag);
             }
         }
+    }
+
+    private void sendUnregisterBroadcast(String service_tag) {
+        Intent unregister_message = new Intent();
+        unregister_message.setAction(service_tag);
+        unregister_message.putExtra(ARG_RESULT_FUNCTION, FUNCTION_RESULT_UNREGISTER);
+        unregister_message.putExtra(ARG_SERVICE_TAG, service_tag);
+
+        sendBroadcast(unregister_message);
+    }
+
+    private void sendDataBroadcast(final String data, final String data_type, final String service_tag){
+        Intent response_message = new Intent();
+        response_message.setAction(service_tag);
+        response_message.putExtra(ARG_RESULT_JSON, data);
+        response_message.putExtra(ARG_RESULT_TYPE, data_type);
+        response_message.putExtra(ARG_SERVICE_TAG, service_tag);
+        response_message.putExtra(ARG_RESULT_FUNCTION, FUNCTION_RESULT_DATA);
+
+        sendOrderedBroadcast(response_message, null, new BroadcastReceiver() {
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int result_code = getResultCode();
+
+                // Result was handled by someone, don't save the response
+                if (result_code != Activity.RESULT_CANCELED) {
+                    System.out.println("someone got the result!");
+                    sendUnregisterBroadcast(service_tag);
+                    return;
+                }
+                // Queue the result for layer re-emission
+                System.out.println("queueing the result...");
+                queue(data, data_type, service_tag);
+            }
+        }, null, Activity.RESULT_CANCELED, null, null);
     }
 
     private static boolean inqueue(String service_tag){

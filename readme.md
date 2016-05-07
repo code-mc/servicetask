@@ -137,6 +137,12 @@ class MainActivity extends Activity {
             }
         });
     }
+
+    @Override
+    protected void onDestroy() {
+        ServiceTaskService.unregisterReceivers(this);
+        super.onDestroy();
+    }
     
     @Override
     protected void onSaveInstanceState(Bundle outState) {

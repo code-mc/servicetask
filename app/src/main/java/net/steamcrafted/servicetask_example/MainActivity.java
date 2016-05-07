@@ -11,6 +11,7 @@ import com.loopj.android.http.TextHttpResponseHandler;
 
 import net.steamcrafted.servicetask.model.ServiceTaskPojo;
 import net.steamcrafted.servicetask.service.ServiceTask;
+import net.steamcrafted.servicetask.service.ServiceTaskService;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -85,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        ServiceTaskService.unregisterReceivers(this);
         super.onDestroy();
     }
 
