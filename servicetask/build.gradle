@@ -1,0 +1,27 @@
+apply plugin: 'com.android.library'
+
+ext {
+    PUBLISH_GROUP_ID = 'net.steamcrafted'
+    PUBLISH_ARTIFACT_ID = 'servicetask'
+    PUBLISH_VERSION = '1.0.0'
+}
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.0"
+
+    defaultConfig {
+        minSdkVersion 3
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+        consumerProguardFiles 'proguard-rules-servicetask.pro'
+    }
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+    compile 'com.google.code.gson:gson:2.6.2'
+}
+
+apply from: 'https://raw.githubusercontent.com/ArthurHub/release-android-library/master/android-release-aar.gradle'
